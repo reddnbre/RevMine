@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RevMine</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="panel">
+        <h1>RevMine</h1>
+        <p id="tier" class="tier">Rookie Miner</p>
+
+        <div class="stats">
+          <div>Coins: <span id="coins">100</span></div>
+          <div>/sec: <span id="income">0</span> <span id="boostMark"></span></div>
+          <div>Market: x<span id="market">1.00</span></div>
+          <div>Miners: <span id="minerCount">2</span>/10</div>
+          <div>Durability: <span id="durability">100</span>%</div>
+          <div>Session: <span id="sessionTime">0:00</span></div>
+        </div>
+
+        <p class="event" id="event">Stable operations</p>
+        <p class="vault-per-sec">Vault +<span id="vaultPerSec">0.000</span>/sec</p>
+        <p class="meta" id="metaLine">No active objectives</p>
+        <section class="millionaire-goal">
+          <h2>👑 Road to Millionaire</h2>
+          <div id="goalText">0 / 1,000,000</div>
+          <div class="progress-bar mission-progress">
+            <div id="goalProgress" class="progress-fill"></div>
+          </div>
+          <div id="goalRemaining">1,000,000 coins to go</div>
+          <div id="goalStatus" class="goal-status">Status: Mining...</div>
+        </section>
+        <section class="leaderboard-box">
+          <h2>🏆 Leaderboard</h2>
+          <div class="name-display-row">
+            <span id="playerNameDisplay">You</span>
+            <button id="editNameBtn" class="icon-btn" aria-label="Edit leaderboard name">✏️</button>
+          </div>
+          <div id="nameEditor" class="name-row hidden">
+            <input id="playerNameInput" type="text" maxlength="18" placeholder="Enter your leaderboard name" />
+            <button id="saveNameBtn">Set Name</button>
+          </div>
+          <div id="leaderboardList"></div>
+        </section>
+
+        <section class="progress-wrap" id="progressWrap"></section>
+        <section class="badges" id="badges"></section>
+
+        <section class="miners-grid" id="minersGrid"></section>
+
+        <div class="button-row">
+          <button id="buyMiner">Buy Miner (50)</button>
+          <button id="repair">Repair (+20 durability, 100)</button>
+        </div>
+        <button id="autoMergeBtn">Auto Merge</button>
+
+        <section class="vault-box">
+          <h2>Vault: <span id="vault">0</span></h2>
+          <input id="depositInput" type="number" min="0" placeholder="Deposit amount" />
+          <button id="depositBtn">Deposit</button>
+          <button id="withdrawBtn">Withdraw</button>
+        </section>
+
+        <section class="upgrades-box">
+          <h2>Research Lab</h2>
+          <div id="upgradesList"></div>
+        </section>
+
+        <section class="mission-box">
+          <h2>Contract Mission</h2>
+          <div id="missionText">No mission active</div>
+          <div class="progress-bar mission-progress">
+            <div id="missionProgress" class="progress-fill"></div>
+          </div>
+          <button id="claimMissionBtn">Claim Mission Reward</button>
+        </section>
+
+        <section class="daily-box">
+          <h2>📅 Daily Reward</h2>
+          <div id="dailyText">Come back daily for streak rewards.</div>
+          <button id="dailyClaimBtn">Claim Daily Reward</button>
+        </section>
+
+        <section class="prestige-box">
+          <h2>🌟 Prestige</h2>
+          <div id="prestigeText">Reach 1,000,000 to unlock prestige.</div>
+          <button id="prestigeBtn">Prestige Reset</button>
+        </section>
+
+        <button id="boostBtn">Boost</button>
+        <button id="supplyBtn">Supply Drop</button>
+        <button id="rewardedAdBtn">🎬 Watch Ad for Bonus</button>
+        <button id="saveBtn">Save Progress</button>
+        <button id="resetBtn">Hard Reset</button>
+        <section class="admin-box">
+          <h2>🛠️ Monetag Backoffice</h2>
+          <div id="adAdminLock">
+            <input id="adAdminPin" type="password" placeholder="Admin PIN" />
+            <button id="adUnlockBtn">Unlock Ad Admin</button>
+          </div>
+          <div id="adAdminPanel" class="hidden">
+            <input id="monetagMainZoneInput" type="text" placeholder="Monetag Main Zone ID (required)" />
+            <input id="monetagRewardedZoneInput" type="text" placeholder="Rewarded Zone ID (optional)" />
+            <input id="monetagScriptUrlInput" type="text" placeholder="SDK URL (optional override)" />
+            <input id="monetagRewardCoinsInput" type="number" min="50" step="50" placeholder="Rewarded bonus coins (default 400)" />
+            <textarea id="monetagOwnershipScriptInput" rows="4" placeholder="Ownership verification script (injected into head)"></textarea>
+            <button id="adSavePlacementBtn">Save Monetag Config</button>
+            <div id="adPlacementsList"></div>
+          </div>
+        </section>
+
+        <p id="message" class="message">Build your mining empire...</p>
+        <div id="winBanner" class="win-banner hidden">
+          👑 Millionaire Achieved! Welcome, Crypto King.
+        </div>
+        <div id="floatLayer" class="float-layer"></div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
