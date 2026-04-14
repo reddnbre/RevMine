@@ -214,7 +214,54 @@ function formatTime(seconds) {
   return `${mins}:${String(secs).padStart(2, "0")}`;
 }
 
+function clampInt(value, min, max) {
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n)) return min;
+  return Math.min(max, Math.max(min, n));
+}
+
 function normalizeNumericState() {
+  if (!state.upgrades || typeof state.upgrades !== "object") {
+    state.upgrades = { ...baseState.upgrades };
+  }
+  for (const u of upgrades) {
+    state.upgrades[u.id] = clampInt(state.upgrades[u.id], 0, 999);
+  }
+
+  if (!Array.isArray(state.miners) || state.miners.length === 0) {
+    state.miners = structuredClone(baseState.miners);
+  } else {
+    state.miners = state.miners.map((m) => ({
+      level: clampInt(m && m.level, 1, 99)
+    }));
+  }
+
+  state.maxMiners = clampInt(state.maxMiners, 1, 10);
+  if (state.miners.length > state.maxMiners) {
+    state.miners = state.miners.slice(0, state.maxMiners);
+  }
+
+  if (!state.mission || typeof state.mission !== "object") {
+    state.mission = structuredClone(baseState.mission);
+  } else {
+    const validTypes = ["earn", "merge", "buy"];
+    if (!validTypes.includes(state.mission.type)) state.mission.type = "earn";
+    if (typeof state.mission.label !== "string") state.mission.label = "Contract mission";
+    state.mission.target = Math.max(1, clampInt(state.mission.target, 1, 1e12));
+    state.mission.reward = Math.max(0, clampInt(state.mission.reward, 0, 1e12));
+    state.mission.progress = clampInt(state.mission.progress, 0, state.mission.target);
+    if (state.mission.progress >= state.mission.target) {
+      state.mission.progress = state.mission.target;
+      state.missionRewardReady = true;
+    }
+  }
+
+  state.selected = Array.isArray(state.selected)
+    ? state.selected.filter((i) => Number.isInteger(i) && i >= 0 && i < state.miners.length).slice(0, 2)
+    : [];
+
+  if (typeof state.playerName !== "string") state.playerName = "You";
+
   if (!Number.isFinite(state.coins)) state.coins = 0;
   if (!Number.isFinite(state.totalEarned)) state.totalEarned = 0;
   if (!Number.isFinite(state.market)) state.market = 1;
@@ -223,6 +270,18 @@ function normalizeNumericState() {
   if (!Number.isFinite(state.boostCooldown)) state.boostCooldown = 0;
   if (!Number.isFinite(state.supplyCooldown)) state.supplyCooldown = 0;
   if (!Number.isFinite(state.boostTimeLeft)) state.boostTimeLeft = 0;
+  if (!Number.isFinite(state.goal)) state.goal = baseState.goal;
+  if (!Number.isFinite(state.prestigeMultiplier) || state.prestigeMultiplier < 1) state.prestigeMultiplier = 1;
+  state.prestigeLevel = clampInt(state.prestigeLevel, 0, 9999);
+  state.sessionSeconds = Math.max(0, clampInt(state.sessionSeconds, 0, 1e9));
+  state.surgeStreak = clampInt(state.surgeStreak, 0, 999);
+  state.powerOutageStreak = clampInt(state.powerOutageStreak, 0, 999);
+  state.dailyStreak = clampInt(state.dailyStreak, 0, 9999);
+  if (typeof state.dailyLastClaimDay !== "string") state.dailyLastClaimDay = "";
+  state.frenzyTimeLeft = clampInt(state.frenzyTimeLeft, 0, 9999);
+  state.frenzyCooldown = clampInt(state.frenzyCooldown, 0, 9999);
+  state.nearGoalHintAt = Math.max(0, clampInt(state.nearGoalHintAt, 0, 1e9));
+  if (!Number.isFinite(state.lastSaveAt)) state.lastSaveAt = Date.now();
 }
 
 function getUpgradeCost(upgradeId) {
@@ -921,6 +980,9 @@ function withdrawVault() {
 function boost(durationSeconds = 30, cooldownSeconds = 30, messageText = "") {
   if (!Number.isFinite(durationSeconds)) durationSeconds = 30;
   if (!Number.isFinite(cooldownSeconds)) cooldownSeconds = 30;
+  durationSeconds = Math.max(1, Math.floor(durationSeconds));
+  cooldownSeconds = Math.max(0, Math.floor(cooldownSeconds));
+  if (typeof messageText !== "string") messageText = "";
   if (state.boostCooldown > 0) {
     setMessage(`Boost in ${state.boostCooldown}s`);
     render();
@@ -937,22 +999,26 @@ function boost(durationSeconds = 30, cooldownSeconds = 30, messageText = "") {
 function supplyDrop(minReward = 100, maxReward = 400, sourceLabel = "") {
   if (!Number.isFinite(minReward)) minReward = 100;
   if (!Number.isFinite(maxReward)) maxReward = 400;
+  const lo = Math.min(minReward, maxReward);
+  const hi = Math.max(minReward, maxReward);
+  const label = typeof sourceLabel === "string" ? sourceLabel : "";
   if (state.supplyCooldown > 0) {
     setMessage(`Supply in ${state.supplyCooldown}s`);
     render();
     return;
   }
 
-  const supplyBonus = 1 + state.upgrades.supplyChain * 0.12;
-  const spread = Math.max(1, maxReward - minReward + 1);
-  const reward = Math.floor((Math.random() * spread + minReward) * supplyBonus);
+  const supplyLevel = clampInt(state.upgrades.supplyChain, 0, 999);
+  const supplyBonus = 1 + supplyLevel * 0.12;
+  const spread = Math.max(1, hi - lo + 1);
+  const reward = Math.floor((Math.random() * spread + lo) * supplyBonus);
   state.coins += reward;
   state.totalEarned += reward;
   state.supplyCooldown = 60;
   updateMission(reward, 0);
   checkBadges();
   updateTier();
-  setMessage(sourceLabel ? `${sourceLabel}: +${reward} coins` : `🎁 +${reward} coins`);
+  setMessage(label ? `${label}: +${reward} coins` : `🎁 +${reward} coins`);
   render();
 }
 
