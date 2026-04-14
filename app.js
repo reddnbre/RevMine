@@ -1312,19 +1312,35 @@ document.addEventListener("click", (event) => {
   addButtonFeedback(button, event);
 });
 
-document.addEventListener("keydown", (event) => {
+function isBackofficeToggleShortcut(event) {
   const key = (event.key || "").toLowerCase();
-  if (event.ctrlKey && event.shiftKey && key === "s") {
+  const primary = event.ctrlKey || event.metaKey;
+  // Browsers often reserve Ctrl+Shift+S (e.g. Firefox screenshot) before the page sees it.
+  // Use Ctrl/Cmd+Shift+Y or Ctrl/Cmd+Shift+` as fallbacks; Ctrl+Alt+M also works.
+  if (primary && event.shiftKey && (key === "s" || key === "y" || event.code === "Backquote")) {
+    return true;
+  }
+  if (event.ctrlKey && event.altKey && !event.shiftKey && key === "m") return true;
+  return false;
+}
+
+function onGlobalKeydown(event) {
+  const key = (event.key || "").toLowerCase();
+  if (isBackofficeToggleShortcut(event)) {
     event.preventDefault();
+    event.stopPropagation();
     toggleAdAdminVisibility();
     return;
   }
   if (key === "escape" && adAdminVisible) {
+    event.preventDefault();
     adAdminVisible = false;
     setMessage("Monetag backoffice hidden");
     render();
   }
-});
+}
+
+document.addEventListener("keydown", onGlobalKeydown, true);
 
 loadMonetagConfig();
 applyOwnershipScript();
