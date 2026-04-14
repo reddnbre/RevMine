@@ -142,6 +142,16 @@ h1 {
   gap: 8px;
 }
 
+.action-group {
+  margin-top: 8px;
+}
+
+.ad-secondary {
+  margin-top: 6px;
+  background: #115e59;
+  font-size: 13px;
+}
+
 button,
 input {
   width: 100%;

@@ -612,14 +612,14 @@ function renderAdAdmin() {
     state.boostCooldown > 0
       ? `🎬 Watch Ad for Boost (Boost ${state.boostCooldown}s)`
       : rewardedAdCoolingDown > 0
-        ? `🎬 Watch Ad for Boost (${rewardedAdCoolingDown}s)`
-        : "🎬 Watch Ad for Boost";
+        ? `🎬 Watch ad: Super Boost (${rewardedAdCoolingDown}s)`
+        : "🎬 Watch ad: Super Boost (60s)";
   rewardedSupplyBtnEl.textContent =
     state.supplyCooldown > 0
       ? `🎬 Watch Ad for Supply Drop (Supply ${state.supplyCooldown}s)`
       : rewardedAdCoolingDown > 0
-        ? `🎬 Watch Ad for Supply Drop (${rewardedAdCoolingDown}s)`
-        : "🎬 Watch Ad for Supply Drop";
+        ? `🎬 Watch ad: Mega Supply (${rewardedAdCoolingDown}s)`
+        : "🎬 Watch ad: Mega Supply (300-900)";
 
   if (!adAdminUnlocked) return;
 
@@ -709,7 +709,7 @@ function triggerRewardedBoostAd() {
   showMonetagAd("revmine_rewarded_boost")
     .then(() => {
       rewardedAdCoolingDown = 45;
-      boost();
+      boost(60, 30, "⚡ Ad super boost for 60s");
       spawnFloatText("Boost Activated", rewardedBoostBtnEl);
     })
     .catch(() => {
@@ -738,7 +738,7 @@ function triggerRewardedSupplyAd() {
   showMonetagAd("revmine_rewarded_supply")
     .then(() => {
       rewardedAdCoolingDown = 45;
-      supplyDrop();
+      supplyDrop(300, 900, "🎁 Ad supply drop");
       spawnFloatText("Supply Delivered", rewardedSupplyBtnEl);
     })
     .catch(() => {
@@ -905,7 +905,7 @@ function withdrawVault() {
   render();
 }
 
-function boost() {
+function boost(durationSeconds = 30, cooldownSeconds = 30, messageText = "") {
   if (state.boostCooldown > 0) {
     setMessage(`Boost in ${state.boostCooldown}s`);
     render();
@@ -913,13 +913,13 @@ function boost() {
   }
 
   state.boostActive = true;
-  state.boostTimeLeft = 30;
-  state.boostCooldown = 30;
-  setMessage("⚡ 2x boost for 30s");
+  state.boostTimeLeft = durationSeconds;
+  state.boostCooldown = cooldownSeconds;
+  setMessage(messageText || `⚡ 2x boost for ${durationSeconds}s`);
   render();
 }
 
-function supplyDrop() {
+function supplyDrop(minReward = 100, maxReward = 400, sourceLabel = "") {
   if (state.supplyCooldown > 0) {
     setMessage(`Supply in ${state.supplyCooldown}s`);
     render();
@@ -927,14 +927,15 @@ function supplyDrop() {
   }
 
   const supplyBonus = 1 + state.upgrades.supplyChain * 0.12;
-  const reward = Math.floor((Math.random() * 301 + 100) * supplyBonus);
+  const spread = Math.max(1, maxReward - minReward + 1);
+  const reward = Math.floor((Math.random() * spread + minReward) * supplyBonus);
   state.coins += reward;
   state.totalEarned += reward;
   state.supplyCooldown = 60;
   updateMission(reward, 0);
   checkBadges();
   updateTier();
-  setMessage(`🎁 +${reward} coins`);
+  setMessage(sourceLabel ? `${sourceLabel}: +${reward} coins` : `🎁 +${reward} coins`);
   render();
 }
 
