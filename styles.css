@@ -283,6 +283,8 @@ button:disabled {
 
 #adUnlockBtn,
 #adSavePlacementBtn,
+#rewardedBoostBtn,
+#rewardedSupplyBtn,
 #rewardedAdBtn {
   background: #0f766e;
 }

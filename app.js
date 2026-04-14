@@ -76,7 +76,9 @@ const progressWrapEl = document.getElementById("progressWrap");
 const minersGridEl = document.getElementById("minersGrid");
 const depositInputEl = document.getElementById("depositInput");
 const boostBtnEl = document.getElementById("boostBtn");
+const rewardedBoostBtnEl = document.getElementById("rewardedBoostBtn");
 const supplyBtnEl = document.getElementById("supplyBtn");
+const rewardedSupplyBtnEl = document.getElementById("rewardedSupplyBtn");
 const autoMergeBtnEl = document.getElementById("autoMergeBtn");
 const rewardedAdBtnEl = document.getElementById("rewardedAdBtn");
 const upgradesListEl = document.getElementById("upgradesList");
@@ -532,6 +534,20 @@ function getMonetagFnName() {
   return zone ? `show_${zone}` : "";
 }
 
+function getMonetagShowFn() {
+  const fnName = getMonetagFnName();
+  const fn = window[fnName];
+  if (!fnName || typeof fn !== "function") return null;
+  return fn;
+}
+
+function showMonetagAd(requestVar) {
+  const showFn = getMonetagShowFn();
+  if (!showFn) return Promise.reject(new Error("Monetag not ready"));
+  const eventId = `${state.playerName}-${Date.now()}-${requestVar}`;
+  return showFn({ ymid: eventId, requestVar });
+}
+
 function loadMonetagSdk() {
   monetagReady = false;
   const existing = document.querySelector("script[data-monetag-sdk='1']");
@@ -596,6 +612,22 @@ function renderAdAdmin() {
     rewardedAdCoolingDown > 0
       ? `🎬 Watch Ad for Bonus (${rewardedAdCoolingDown}s)`
       : `🎬 Watch Ad for +${Math.floor(monetagConfig.rewardedCoins).toLocaleString()} coins`;
+
+  const adNotReady = !monetagConfig.mainZone.trim() || !monetagReady || rewardedAdCoolingDown > 0;
+  rewardedBoostBtnEl.disabled = adNotReady || state.boostCooldown > 0;
+  rewardedSupplyBtnEl.disabled = adNotReady || state.supplyCooldown > 0;
+  rewardedBoostBtnEl.textContent =
+    state.boostCooldown > 0
+      ? `🎬 Watch Ad for Boost (Boost ${state.boostCooldown}s)`
+      : rewardedAdCoolingDown > 0
+        ? `🎬 Watch Ad for Boost (${rewardedAdCoolingDown}s)`
+        : "🎬 Watch Ad for Boost";
+  rewardedSupplyBtnEl.textContent =
+    state.supplyCooldown > 0
+      ? `🎬 Watch Ad for Supply Drop (Supply ${state.supplyCooldown}s)`
+      : rewardedAdCoolingDown > 0
+        ? `🎬 Watch Ad for Supply Drop (${rewardedAdCoolingDown}s)`
+        : "🎬 Watch Ad for Supply Drop";
 
   if (!adAdminUnlocked) return;
 
@@ -672,16 +704,13 @@ function triggerRewardedAd() {
     return;
   }
 
-  const fnName = getMonetagFnName();
-  const showFn = window[fnName];
-  if (!fnName || typeof showFn !== "function") {
+  if (!getMonetagShowFn()) {
     setMessage("Monetag not ready. Configure zone and reload SDK.");
     render();
     return;
   }
 
-  const eventId = `${state.playerName}-${Date.now()}`;
-  showFn({ ymid: eventId, requestVar: "revmine_rewarded" })
+  showMonetagAd("revmine_rewarded")
     .then(() => {
       const reward = Math.floor(monetagConfig.rewardedCoins || 400);
       state.coins += reward;
@@ -692,6 +721,64 @@ function triggerRewardedAd() {
       checkBadges();
       updateTier();
       render();
+    })
+    .catch(() => {
+      setMessage("Ad unavailable right now. Try again shortly.");
+      render();
+    });
+}
+
+function triggerRewardedBoostAd() {
+  if (state.boostCooldown > 0) {
+    setMessage(`Boost in ${state.boostCooldown}s`);
+    render();
+    return;
+  }
+  if (rewardedAdCoolingDown > 0) {
+    setMessage(`Ad ready in ${rewardedAdCoolingDown}s`);
+    render();
+    return;
+  }
+  if (!getMonetagShowFn()) {
+    setMessage("Monetag not ready. Configure zone and reload SDK.");
+    render();
+    return;
+  }
+
+  showMonetagAd("revmine_rewarded_boost")
+    .then(() => {
+      rewardedAdCoolingDown = 45;
+      boost();
+      spawnFloatText("Boost Activated", rewardedBoostBtnEl);
+    })
+    .catch(() => {
+      setMessage("Ad unavailable right now. Try again shortly.");
+      render();
+    });
+}
+
+function triggerRewardedSupplyAd() {
+  if (state.supplyCooldown > 0) {
+    setMessage(`Supply in ${state.supplyCooldown}s`);
+    render();
+    return;
+  }
+  if (rewardedAdCoolingDown > 0) {
+    setMessage(`Ad ready in ${rewardedAdCoolingDown}s`);
+    render();
+    return;
+  }
+  if (!getMonetagShowFn()) {
+    setMessage("Monetag not ready. Configure zone and reload SDK.");
+    render();
+    return;
+  }
+
+  showMonetagAd("revmine_rewarded_supply")
+    .then(() => {
+      rewardedAdCoolingDown = 45;
+      supplyDrop();
+      spawnFloatText("Supply Delivered", rewardedSupplyBtnEl);
     })
     .catch(() => {
       setMessage("Ad unavailable right now. Try again shortly.");
@@ -1166,6 +1253,8 @@ editNameBtnEl.addEventListener("click", toggleNameEditor);
 adUnlockBtnEl.addEventListener("click", unlockAdAdmin);
 adSavePlacementBtnEl.addEventListener("click", saveAdPlacement);
 rewardedAdBtnEl.addEventListener("click", triggerRewardedAd);
+rewardedBoostBtnEl.addEventListener("click", triggerRewardedBoostAd);
+rewardedSupplyBtnEl.addEventListener("click", triggerRewardedSupplyAd);
 playerNameInputEl.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     setPlayerName();
