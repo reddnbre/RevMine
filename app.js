@@ -214,6 +214,17 @@ function formatTime(seconds) {
   return `${mins}:${String(secs).padStart(2, "0")}`;
 }
 
+function normalizeNumericState() {
+  if (!Number.isFinite(state.coins)) state.coins = 0;
+  if (!Number.isFinite(state.totalEarned)) state.totalEarned = 0;
+  if (!Number.isFinite(state.market)) state.market = 1;
+  if (!Number.isFinite(state.durability)) state.durability = 100;
+  if (!Number.isFinite(state.vault)) state.vault = 0;
+  if (!Number.isFinite(state.boostCooldown)) state.boostCooldown = 0;
+  if (!Number.isFinite(state.supplyCooldown)) state.supplyCooldown = 0;
+  if (!Number.isFinite(state.boostTimeLeft)) state.boostTimeLeft = 0;
+}
+
 function getUpgradeCost(upgradeId) {
   const config = upgrades.find((item) => item.id === upgradeId);
   const level = state.upgrades[upgradeId];
@@ -475,6 +486,7 @@ function renderMiners() {
 }
 
 function render() {
+  normalizeNumericState();
   coinEl.textContent = Math.floor(state.coins).toLocaleString();
   incomeEl.textContent = getDisplayedIncome().toLocaleString();
   boostMarkEl.textContent = state.boostActive ? "🔥" : "";
@@ -907,6 +919,8 @@ function withdrawVault() {
 }
 
 function boost(durationSeconds = 30, cooldownSeconds = 30, messageText = "") {
+  if (!Number.isFinite(durationSeconds)) durationSeconds = 30;
+  if (!Number.isFinite(cooldownSeconds)) cooldownSeconds = 30;
   if (state.boostCooldown > 0) {
     setMessage(`Boost in ${state.boostCooldown}s`);
     render();
@@ -921,6 +935,8 @@ function boost(durationSeconds = 30, cooldownSeconds = 30, messageText = "") {
 }
 
 function supplyDrop(minReward = 100, maxReward = 400, sourceLabel = "") {
+  if (!Number.isFinite(minReward)) minReward = 100;
+  if (!Number.isFinite(maxReward)) maxReward = 400;
   if (state.supplyCooldown > 0) {
     setMessage(`Supply in ${state.supplyCooldown}s`);
     render();
@@ -1080,6 +1096,7 @@ function loadGame() {
     Object.assign(state, baseState, saved);
     state.upgrades = { ...baseState.upgrades, ...(saved.upgrades || {}) };
     state.mission = { ...baseState.mission, ...(saved.mission || {}) };
+    normalizeNumericState();
     applyOfflineProgress();
   } catch (error) {
     localStorage.removeItem(SAVE_KEY);
@@ -1203,8 +1220,8 @@ document.getElementById("buyMiner").addEventListener("click", addMiner);
 document.getElementById("repair").addEventListener("click", repairRig);
 document.getElementById("depositBtn").addEventListener("click", depositVault);
 document.getElementById("withdrawBtn").addEventListener("click", withdrawVault);
-boostBtnEl.addEventListener("click", boost);
-supplyBtnEl.addEventListener("click", supplyDrop);
+boostBtnEl.addEventListener("click", () => boost());
+supplyBtnEl.addEventListener("click", () => supplyDrop());
 autoMergeBtnEl.addEventListener("click", autoMerge);
 claimMissionBtnEl.addEventListener("click", claimMissionReward);
 saveBtnEl.addEventListener("click", () => saveGame(true));
