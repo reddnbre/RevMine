@@ -1315,13 +1315,7 @@ document.addEventListener("click", (event) => {
 function isBackofficeToggleShortcut(event) {
   const key = (event.key || "").toLowerCase();
   const primary = event.ctrlKey || event.metaKey;
-  // Browsers often reserve Ctrl+Shift+S (e.g. Firefox screenshot) before the page sees it.
-  // Use Ctrl/Cmd+Shift+Y or Ctrl/Cmd+Shift+` as fallbacks; Ctrl+Alt+M also works.
-  if (primary && event.shiftKey && (key === "s" || key === "y" || event.code === "Backquote")) {
-    return true;
-  }
-  if (event.ctrlKey && event.altKey && !event.shiftKey && key === "m") return true;
-  return false;
+  return primary && event.shiftKey && key === "x";
 }
 
 function onGlobalKeydown(event) {
