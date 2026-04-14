@@ -112,11 +112,48 @@
             <button id="adUnlockBtn">Unlock Ad Admin</button>
           </div>
           <div id="adAdminPanel" class="hidden">
-            <input id="monetagMainZoneInput" type="text" placeholder="Monetag Main Zone ID (required)" />
-            <input id="monetagRewardedZoneInput" type="text" placeholder="Rewarded Zone ID (optional)" />
-            <input id="monetagScriptUrlInput" type="text" placeholder="SDK URL (optional override)" />
-            <input id="monetagRewardCoinsInput" type="number" min="50" step="50" placeholder="Rewarded bonus coins (default 400)" />
-            <textarea id="monetagOwnershipScriptInput" rows="4" placeholder="Ownership verification script (injected into head)"></textarea>
+            <p class="admin-hint">
+              Main zone can stay empty until Monetag shows it. Ownership script is not injected while this panel is
+              open so pasting is not cleared. Alternate editor:
+              <a href="./monetag-setup.html" target="_blank" rel="noopener">monetag-setup.html</a>
+            </p>
+            <input
+              id="monetagMainZoneInput"
+              type="text"
+              autocomplete="off"
+              data-revmine-admin="1"
+              placeholder="Monetag Main Zone ID (when Monetag gives it — optional until then)"
+            />
+            <input
+              id="monetagRewardedZoneInput"
+              type="text"
+              autocomplete="off"
+              data-revmine-admin="1"
+              placeholder="Rewarded Zone ID (optional)"
+            />
+            <input
+              id="monetagScriptUrlInput"
+              type="text"
+              autocomplete="off"
+              data-revmine-admin="1"
+              placeholder="SDK URL (optional override)"
+            />
+            <input
+              id="monetagRewardCoinsInput"
+              type="number"
+              min="50"
+              step="50"
+              autocomplete="off"
+              data-revmine-admin="1"
+              placeholder="Rewarded bonus coins (default 400)"
+            />
+            <textarea
+              id="monetagOwnershipScriptInput"
+              rows="4"
+              autocomplete="off"
+              data-revmine-admin="1"
+              placeholder="Ownership verification HTML/script (injected into head when this panel is closed)"
+            ></textarea>
             <button id="adSavePlacementBtn">Save Monetag Config</button>
             <div id="adPlacementsList"></div>
           </div>

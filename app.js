@@ -646,6 +646,9 @@ function loadMonetagSdk() {
 function applyOwnershipScript() {
   const previousNodes = document.querySelectorAll("[data-monetag-ownership='1']");
   previousNodes.forEach((node) => node.remove());
+  // Monetag's verification snippet runs in this document and can block or clear inputs.
+  // While the backoffice is open, keep it stripped so you can paste zone IDs and ownership HTML safely.
+  if (adAdminVisible) return;
   const html = (monetagConfig.ownershipScript || "").trim();
   if (!html) return;
 
@@ -738,6 +741,7 @@ function toggleAdAdminVisibility() {
   } else {
     setMessage("Monetag backoffice hidden");
   }
+  applyOwnershipScript();
   render();
 }
 
@@ -748,12 +752,6 @@ function saveAdPlacement() {
   const rewardCoins = Number(monetagRewardCoinsInputEl.value || 400);
   const ownershipScript = monetagOwnershipScriptInputEl.value || "";
 
-  if (!mainZone) {
-    setMessage("Main Zone ID is required");
-    render();
-    return;
-  }
-
   monetagConfig.mainZone = mainZone;
   monetagConfig.rewardedZone = rewardedZone;
   monetagConfig.sdkUrl = sdkUrl;
@@ -763,7 +761,13 @@ function saveAdPlacement() {
   applyOwnershipScript();
   loadMonetagSdk();
   syncMonetagFormFromConfig();
-  setMessage("Monetag config saved");
+  if (!mainZone) {
+    setMessage(
+      "Draft saved (no Main Zone yet). Monetag often shows the zone ID only after site approval — add it here when ready, save again, then reload the game page. Rewarded ads stay off until Main Zone + SDK load."
+    );
+  } else {
+    setMessage("Monetag config saved");
+  }
   render();
 }
 
