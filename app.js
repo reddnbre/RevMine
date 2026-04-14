@@ -1315,7 +1315,7 @@ document.addEventListener("click", (event) => {
 function isBackofficeToggleShortcut(event) {
   const key = (event.key || "").toLowerCase();
   const primary = event.ctrlKey || event.metaKey;
-  return primary && event.shiftKey && key === "x";
+  return primary && event.shiftKey && (key === "x" || event.code === "KeyX");
 }
 
 function onGlobalKeydown(event) {
@@ -1335,6 +1335,25 @@ function onGlobalKeydown(event) {
 }
 
 document.addEventListener("keydown", onGlobalKeydown, true);
+
+// Keyboard shortcut is easy to miss (browser/extensions). Triple-click the title toggles the same panel.
+const gameTitleEl = document.getElementById("gameTitle");
+let gameTitleClickCount = 0;
+let gameTitleClickTimer = null;
+if (gameTitleEl) {
+  gameTitleEl.addEventListener("click", () => {
+    gameTitleClickCount += 1;
+    clearTimeout(gameTitleClickTimer);
+    gameTitleClickTimer = setTimeout(() => {
+      gameTitleClickCount = 0;
+    }, 700);
+    if (gameTitleClickCount >= 3) {
+      gameTitleClickCount = 0;
+      clearTimeout(gameTitleClickTimer);
+      toggleAdAdminVisibility();
+    }
+  });
+}
 
 loadMonetagConfig();
 applyOwnershipScript();
