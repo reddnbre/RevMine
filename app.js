@@ -668,6 +668,15 @@ function applyOwnershipScript() {
   });
 }
 
+/** Do not call from render() every tick — it would wipe pasted text before Save. */
+function syncMonetagFormFromConfig() {
+  monetagMainZoneInputEl.value = monetagConfig.mainZone;
+  monetagRewardedZoneInputEl.value = monetagConfig.rewardedZone;
+  monetagScriptUrlInputEl.value = monetagConfig.sdkUrl;
+  monetagRewardCoinsInputEl.value = String(monetagConfig.rewardedCoins);
+  monetagOwnershipScriptInputEl.value = monetagConfig.ownershipScript || "";
+}
+
 function renderAdAdmin() {
   adAdminBoxEl.classList.toggle("hidden", !adAdminVisible);
 
@@ -695,12 +704,6 @@ function renderAdAdmin() {
 
   if (!adAdminUnlocked) return;
 
-  monetagMainZoneInputEl.value = monetagConfig.mainZone;
-  monetagRewardedZoneInputEl.value = monetagConfig.rewardedZone;
-  monetagScriptUrlInputEl.value = monetagConfig.sdkUrl;
-  monetagRewardCoinsInputEl.value = String(monetagConfig.rewardedCoins);
-  monetagOwnershipScriptInputEl.value = monetagConfig.ownershipScript || "";
-
   const status = document.createElement("div");
   status.className = "ad-placement-row";
   status.innerHTML = `
@@ -721,6 +724,7 @@ function unlockAdAdmin() {
     return;
   }
   adAdminUnlocked = true;
+  syncMonetagFormFromConfig();
   setMessage("Monetag backoffice unlocked");
   render();
 }
@@ -729,6 +733,7 @@ function toggleAdAdminVisibility() {
   adAdminVisible = !adAdminVisible;
   if (adAdminVisible) {
     setMessage("Monetag backoffice opened");
+    if (adAdminUnlocked) syncMonetagFormFromConfig();
     setTimeout(() => adAdminPinEl.focus(), 0);
   } else {
     setMessage("Monetag backoffice hidden");
@@ -757,6 +762,7 @@ function saveAdPlacement() {
   saveMonetagConfig();
   applyOwnershipScript();
   loadMonetagSdk();
+  syncMonetagFormFromConfig();
   setMessage("Monetag config saved");
   render();
 }
@@ -1356,6 +1362,7 @@ if (gameTitleEl) {
 }
 
 loadMonetagConfig();
+syncMonetagFormFromConfig();
 applyOwnershipScript();
 loadMonetagSdk();
 loadGame();
