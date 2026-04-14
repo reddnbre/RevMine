@@ -606,8 +606,6 @@ function renderAdAdmin() {
   adPlacementsListEl.innerHTML = "";
 
   const adNotReady = !monetagConfig.mainZone.trim() || !monetagReady || rewardedAdCoolingDown > 0;
-  rewardedBoostBtnEl.classList.toggle("hidden", !monetagConfig.mainZone.trim() || !monetagReady);
-  rewardedSupplyBtnEl.classList.toggle("hidden", !monetagConfig.mainZone.trim() || !monetagReady);
   rewardedBoostBtnEl.disabled = adNotReady || state.boostCooldown > 0;
   rewardedSupplyBtnEl.disabled = adNotReady || state.supplyCooldown > 0;
   rewardedBoostBtnEl.textContent =
