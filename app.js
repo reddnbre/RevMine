@@ -103,6 +103,7 @@ const nameEditorEl = document.getElementById("nameEditor");
 const floatLayerEl = document.getElementById("floatLayer");
 const adAdminPinEl = document.getElementById("adAdminPin");
 const adUnlockBtnEl = document.getElementById("adUnlockBtn");
+const adAdminBoxEl = document.getElementById("adAdminBox");
 const adAdminLockEl = document.getElementById("adAdminLock");
 const adAdminPanelEl = document.getElementById("adAdminPanel");
 const monetagMainZoneInputEl = document.getElementById("monetagMainZoneInput");
@@ -118,6 +119,7 @@ let leaderboardCache = {
 };
 let isEditingName = false;
 let adAdminUnlocked = false;
+let adAdminVisible = false;
 let monetagConfig = {
   pin: "1234",
   sdkUrl: "https://libtl.com/sdk.js",
@@ -581,6 +583,9 @@ function applyOwnershipScript() {
 }
 
 function renderAdAdmin() {
+  adAdminBoxEl.classList.toggle("hidden", !adAdminVisible);
+  if (!adAdminVisible) return;
+
   adAdminLockEl.classList.toggle("hidden", adAdminUnlocked);
   adAdminPanelEl.classList.toggle("hidden", !adAdminUnlocked);
   adPlacementsListEl.innerHTML = "";
@@ -621,6 +626,17 @@ function unlockAdAdmin() {
   }
   adAdminUnlocked = true;
   setMessage("Monetag backoffice unlocked");
+  render();
+}
+
+function toggleAdAdminVisibility() {
+  adAdminVisible = !adAdminVisible;
+  if (adAdminVisible) {
+    setMessage("Monetag backoffice opened");
+    setTimeout(() => adAdminPinEl.focus(), 0);
+  } else {
+    setMessage("Monetag backoffice hidden");
+  }
   render();
 }
 
@@ -1160,6 +1176,20 @@ document.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (!button) return;
   addButtonFeedback(button, event);
+});
+
+document.addEventListener("keydown", (event) => {
+  const key = (event.key || "").toLowerCase();
+  if (event.ctrlKey && event.shiftKey && key === "s") {
+    event.preventDefault();
+    toggleAdAdminVisibility();
+    return;
+  }
+  if (key === "escape" && adAdminVisible) {
+    adAdminVisible = false;
+    setMessage("Monetag backoffice hidden");
+    render();
+  }
 });
 
 loadMonetagConfig();
