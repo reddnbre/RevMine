@@ -75,12 +75,9 @@ const badgesEl = document.getElementById("badges");
 const progressWrapEl = document.getElementById("progressWrap");
 const minersGridEl = document.getElementById("minersGrid");
 const depositInputEl = document.getElementById("depositInput");
-const boostBtnEl = document.getElementById("boostBtn");
 const rewardedBoostBtnEl = document.getElementById("rewardedBoostBtn");
-const supplyBtnEl = document.getElementById("supplyBtn");
 const rewardedSupplyBtnEl = document.getElementById("rewardedSupplyBtn");
 const autoMergeBtnEl = document.getElementById("autoMergeBtn");
-const rewardedAdBtnEl = document.getElementById("rewardedAdBtn");
 const upgradesListEl = document.getElementById("upgradesList");
 const missionTextEl = document.getElementById("missionText");
 const missionProgressEl = document.getElementById("missionProgress");
@@ -490,11 +487,7 @@ function render() {
   metaLineEl.textContent = `Surge streak: ${state.surgeStreak} | Outage streak: ${state.powerOutageStreak} | Event: ${state.frenzyTimeLeft > 0 ? `Rush ${state.frenzyTimeLeft}s` : `Next rush ${state.frenzyCooldown}s`}`;
   messageEl.textContent = state.message;
 
-  boostBtnEl.textContent = state.boostCooldown > 0 ? `⚡ Boost (${state.boostCooldown}s)` : "⚡ Boost";
-  supplyBtnEl.textContent = state.supplyCooldown > 0 ? `🎁 Supply Drop (${state.supplyCooldown}s)` : "🎁 Supply Drop";
   autoMergeBtnEl.textContent = `🤖 Auto Merge (${autoMergeCostPerPair}/pair)`;
-  boostBtnEl.disabled = state.boostCooldown > 0;
-  supplyBtnEl.disabled = state.supplyCooldown > 0;
 
   renderProgress();
   renderBadges();
@@ -606,13 +599,6 @@ function renderAdAdmin() {
   adAdminPanelEl.classList.toggle("hidden", !adAdminUnlocked);
   adPlacementsListEl.innerHTML = "";
 
-  rewardedAdBtnEl.disabled =
-    !monetagConfig.mainZone.trim() || !monetagReady || rewardedAdCoolingDown > 0;
-  rewardedAdBtnEl.textContent =
-    rewardedAdCoolingDown > 0
-      ? `🎬 Watch Ad for Bonus (${rewardedAdCoolingDown}s)`
-      : `🎬 Watch Ad for +${Math.floor(monetagConfig.rewardedCoins).toLocaleString()} coins`;
-
   const adNotReady = !monetagConfig.mainZone.trim() || !monetagReady || rewardedAdCoolingDown > 0;
   rewardedBoostBtnEl.disabled = adNotReady || state.boostCooldown > 0;
   rewardedSupplyBtnEl.disabled = adNotReady || state.supplyCooldown > 0;
@@ -695,37 +681,6 @@ function saveAdPlacement() {
   loadMonetagSdk();
   setMessage("Monetag config saved");
   render();
-}
-
-function triggerRewardedAd() {
-  if (rewardedAdCoolingDown > 0) {
-    setMessage(`Rewarded ad ready in ${rewardedAdCoolingDown}s`);
-    render();
-    return;
-  }
-
-  if (!getMonetagShowFn()) {
-    setMessage("Monetag not ready. Configure zone and reload SDK.");
-    render();
-    return;
-  }
-
-  showMonetagAd("revmine_rewarded")
-    .then(() => {
-      const reward = Math.floor(monetagConfig.rewardedCoins || 400);
-      state.coins += reward;
-      state.totalEarned += reward;
-      rewardedAdCoolingDown = 45;
-      setMessage(`🎬 Ad completed: +${reward.toLocaleString()} coins`);
-      spawnFloatText(`+${reward.toLocaleString()}`, rewardedAdBtnEl);
-      checkBadges();
-      updateTier();
-      render();
-    })
-    .catch(() => {
-      setMessage("Ad unavailable right now. Try again shortly.");
-      render();
-    });
 }
 
 function triggerRewardedBoostAd() {
@@ -1240,8 +1195,6 @@ document.getElementById("buyMiner").addEventListener("click", addMiner);
 document.getElementById("repair").addEventListener("click", repairRig);
 document.getElementById("depositBtn").addEventListener("click", depositVault);
 document.getElementById("withdrawBtn").addEventListener("click", withdrawVault);
-boostBtnEl.addEventListener("click", boost);
-supplyBtnEl.addEventListener("click", supplyDrop);
 autoMergeBtnEl.addEventListener("click", autoMerge);
 claimMissionBtnEl.addEventListener("click", claimMissionReward);
 saveBtnEl.addEventListener("click", () => saveGame(true));
@@ -1252,7 +1205,6 @@ saveNameBtnEl.addEventListener("click", setPlayerName);
 editNameBtnEl.addEventListener("click", toggleNameEditor);
 adUnlockBtnEl.addEventListener("click", unlockAdAdmin);
 adSavePlacementBtnEl.addEventListener("click", saveAdPlacement);
-rewardedAdBtnEl.addEventListener("click", triggerRewardedAd);
 rewardedBoostBtnEl.addEventListener("click", triggerRewardedBoostAd);
 rewardedSupplyBtnEl.addEventListener("click", triggerRewardedSupplyAd);
 playerNameInputEl.addEventListener("keydown", (event) => {
