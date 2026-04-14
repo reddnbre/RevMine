@@ -599,11 +599,6 @@ function applyOwnershipScript() {
 
 function renderAdAdmin() {
   adAdminBoxEl.classList.toggle("hidden", !adAdminVisible);
-  if (!adAdminVisible) return;
-
-  adAdminLockEl.classList.toggle("hidden", adAdminUnlocked);
-  adAdminPanelEl.classList.toggle("hidden", !adAdminUnlocked);
-  adPlacementsListEl.innerHTML = "";
 
   const adNotReady = !monetagConfig.mainZone.trim() || !monetagReady || rewardedAdCoolingDown > 0;
   rewardedBoostBtnEl.disabled = adNotReady || state.boostCooldown > 0;
@@ -620,6 +615,12 @@ function renderAdAdmin() {
       : rewardedAdCoolingDown > 0
         ? `🎬 Watch ad: Mega Supply (${rewardedAdCoolingDown}s)`
         : "🎬 Watch ad: Mega Supply (300-900)";
+
+  if (!adAdminVisible) return;
+
+  adAdminLockEl.classList.toggle("hidden", adAdminUnlocked);
+  adAdminPanelEl.classList.toggle("hidden", !adAdminUnlocked);
+  adPlacementsListEl.innerHTML = "";
 
   if (!adAdminUnlocked) return;
 
