@@ -75,7 +75,9 @@ const badgesEl = document.getElementById("badges");
 const progressWrapEl = document.getElementById("progressWrap");
 const minersGridEl = document.getElementById("minersGrid");
 const depositInputEl = document.getElementById("depositInput");
+const boostBtnEl = document.getElementById("boostBtn");
 const rewardedBoostBtnEl = document.getElementById("rewardedBoostBtn");
+const supplyBtnEl = document.getElementById("supplyBtn");
 const rewardedSupplyBtnEl = document.getElementById("rewardedSupplyBtn");
 const autoMergeBtnEl = document.getElementById("autoMergeBtn");
 const upgradesListEl = document.getElementById("upgradesList");
@@ -487,7 +489,11 @@ function render() {
   metaLineEl.textContent = `Surge streak: ${state.surgeStreak} | Outage streak: ${state.powerOutageStreak} | Event: ${state.frenzyTimeLeft > 0 ? `Rush ${state.frenzyTimeLeft}s` : `Next rush ${state.frenzyCooldown}s`}`;
   messageEl.textContent = state.message;
 
+  boostBtnEl.textContent = state.boostCooldown > 0 ? `⚡ Boost (${state.boostCooldown}s)` : "⚡ Boost";
+  supplyBtnEl.textContent = state.supplyCooldown > 0 ? `🎁 Supply Drop (${state.supplyCooldown}s)` : "🎁 Supply Drop";
   autoMergeBtnEl.textContent = `🤖 Auto Merge (${autoMergeCostPerPair}/pair)`;
+  boostBtnEl.disabled = state.boostCooldown > 0;
+  supplyBtnEl.disabled = state.supplyCooldown > 0;
 
   renderProgress();
   renderBadges();
@@ -600,6 +606,8 @@ function renderAdAdmin() {
   adPlacementsListEl.innerHTML = "";
 
   const adNotReady = !monetagConfig.mainZone.trim() || !monetagReady || rewardedAdCoolingDown > 0;
+  rewardedBoostBtnEl.classList.toggle("hidden", !monetagConfig.mainZone.trim() || !monetagReady);
+  rewardedSupplyBtnEl.classList.toggle("hidden", !monetagConfig.mainZone.trim() || !monetagReady);
   rewardedBoostBtnEl.disabled = adNotReady || state.boostCooldown > 0;
   rewardedSupplyBtnEl.disabled = adNotReady || state.supplyCooldown > 0;
   rewardedBoostBtnEl.textContent =
@@ -1195,6 +1203,8 @@ document.getElementById("buyMiner").addEventListener("click", addMiner);
 document.getElementById("repair").addEventListener("click", repairRig);
 document.getElementById("depositBtn").addEventListener("click", depositVault);
 document.getElementById("withdrawBtn").addEventListener("click", withdrawVault);
+boostBtnEl.addEventListener("click", boost);
+supplyBtnEl.addEventListener("click", supplyDrop);
 autoMergeBtnEl.addEventListener("click", autoMerge);
 claimMissionBtnEl.addEventListener("click", claimMissionReward);
 saveBtnEl.addEventListener("click", () => saveGame(true));
