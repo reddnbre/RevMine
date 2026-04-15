@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RevMine</title>
-    <link rel="stylesheet" href="./styles.css?v=10" />
+    <link rel="stylesheet" href="./styles.css?v=11" />
   </head>
   <body>
     <main class="app">
@@ -118,10 +118,11 @@
               <a href="./monetag-setup.html" target="_blank" rel="noopener">monetag-setup.html</a>
             </p>
             <p class="admin-hint">
-              <strong>SDK URL</strong> must be Monetag’s JavaScript file (leave blank for the default), not your
-              GitHub Pages game link — that URL only goes in Monetag’s publisher / site settings. If Monetag will not
-              accept a <code>*.github.io</code> site there, use a custom domain or ask their support; RevMine cannot
-              change that.
+              <strong>SDK URL</strong> must be Monetag’s JavaScript file (leave blank for the default), not your game
+              URL. In Monetag’s “Add website” step they require a site that is
+              <strong>not a free-hosted domain</strong> — so <code>*.github.io</code> is blocked there. Point a
+              <strong>custom domain</strong> at GitHub Pages (repo Settings → Pages → Custom domain), verify DNS, then
+              register that domain with Monetag. RevMine cannot bypass their rules.
             </p>
             <input
               id="monetagMainZoneInput"
@@ -173,6 +174,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=10"></script>
+    <script src="./app.js?v=11"></script>
   </body>
 </html>
