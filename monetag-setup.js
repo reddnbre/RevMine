@@ -1,4 +1,5 @@
 const MONETAG_CONFIG_KEY = "revmine_monetag_v1";
+const DEFAULT_MONETAG_SDK_URL = "https://libtl.com/sdk.js";
 
 const pinInput = document.getElementById("setupPin");
 const unlockBtn = document.getElementById("setupUnlockBtn");
@@ -14,7 +15,7 @@ const statusEl = document.getElementById("setupStatus");
 
 let config = {
   pin: "1234",
-  sdkUrl: "https://libtl.com/sdk.js",
+  sdkUrl: DEFAULT_MONETAG_SDK_URL,
   mainZone: "",
   rewardedZone: "",
   rewardedCoins: 400,
@@ -30,7 +31,7 @@ function loadConfig() {
     const saved = JSON.parse(raw);
     config = {
       pin: saved.pin || "1234",
-      sdkUrl: saved.sdkUrl || "https://libtl.com/sdk.js",
+      sdkUrl: saved.sdkUrl || DEFAULT_MONETAG_SDK_URL,
       mainZone: saved.mainZone || "",
       rewardedZone: saved.rewardedZone || "",
       rewardedCoins: Number(saved.rewardedCoins) > 0 ? Number(saved.rewardedCoins) : 400,
@@ -51,6 +52,40 @@ function syncForm() {
 
 function setStatus(text) {
   statusEl.textContent = text;
+}
+
+function normalizeMonetagSdkUrlInput(raw) {
+  const trimmed = String(raw ?? "").trim();
+  if (!trimmed) return { ok: true, url: DEFAULT_MONETAG_SDK_URL };
+
+  let parsed;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return {
+      ok: false,
+      message:
+        "Invalid SDK URL. Use Monetag’s .js file URL, or leave blank for the default. Do not use your GitHub Pages game link here."
+    };
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return { ok: false, message: "SDK URL must start with https:// (or http://)." };
+  }
+
+  const host = parsed.hostname.toLowerCase();
+  const pathPlus = `${parsed.pathname}${parsed.search}`.toLowerCase();
+  const looksLikeGithubPagesOrRepo =
+    host.endsWith("github.io") || host === "github.com" || host.endsWith(".github.com");
+  if (looksLikeGithubPagesOrRepo && !/\.js(\?|#|$)/i.test(pathPlus)) {
+    return {
+      ok: false,
+      message:
+        "That looks like your GitHub site/repo URL, not Monetag’s SDK. Clear the SDK field for the default. Put your game’s https://….github.io/… URL only in Monetag’s dashboard site settings."
+    };
+  }
+
+  return { ok: true, url: trimmed };
 }
 
 function applyUi() {
@@ -74,10 +109,15 @@ saveBtn.addEventListener("click", () => {
     setStatus("Unlock with PIN first.");
     return;
   }
+  const sdkNorm = normalizeMonetagSdkUrlInput(sdkEl.value);
+  if (!sdkNorm.ok) {
+    setStatus(sdkNorm.message);
+    return;
+  }
   const rewardCoins = Number(coinsEl.value || 400);
   config.mainZone = mainEl.value.trim();
   config.rewardedZone = rewardedEl.value.trim();
-  config.sdkUrl = sdkEl.value.trim() || "https://libtl.com/sdk.js";
+  config.sdkUrl = sdkNorm.url;
   config.rewardedCoins = Number.isFinite(rewardCoins) && rewardCoins > 0 ? rewardCoins : 400;
   config.ownershipScript = ownershipEl.value || "";
   localStorage.setItem(MONETAG_CONFIG_KEY, JSON.stringify(config));

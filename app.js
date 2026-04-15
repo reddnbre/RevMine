@@ -1,6 +1,7 @@
 const SAVE_KEY = "revmine_save_v2";
 const MONETAG_CONFIG_KEY = "revmine_monetag_v1";
 const GAME_TICK_MS = 1000;
+const DEFAULT_MONETAG_SDK_URL = "https://libtl.com/sdk.js";
 
 const baseState = {
   coins: 100,
@@ -123,7 +124,7 @@ let adAdminUnlocked = false;
 let adAdminVisible = false;
 let monetagConfig = {
   pin: "1234",
-  sdkUrl: "https://libtl.com/sdk.js",
+  sdkUrl: DEFAULT_MONETAG_SDK_URL,
   mainZone: "",
   rewardedZone: "",
   rewardedCoins: 400,
@@ -584,7 +585,7 @@ function loadMonetagConfig() {
     const saved = JSON.parse(raw);
     monetagConfig = {
       pin: saved.pin || "1234",
-      sdkUrl: saved.sdkUrl || "https://libtl.com/sdk.js",
+      sdkUrl: saved.sdkUrl || DEFAULT_MONETAG_SDK_URL,
       mainZone: saved.mainZone || "",
       rewardedZone: saved.rewardedZone || "",
       rewardedCoins: Number(saved.rewardedCoins) > 0 ? Number(saved.rewardedCoins) : 400,
@@ -618,6 +619,41 @@ function showMonetagAd(requestVar) {
   return showFn({ ymid: eventId, requestVar });
 }
 
+/** SDK field = Monetag’s script file, not your GitHub Pages game URL (that goes in Monetag’s dashboard only). */
+function normalizeMonetagSdkUrlInput(raw) {
+  const trimmed = String(raw ?? "").trim();
+  if (!trimmed) return { ok: true, url: DEFAULT_MONETAG_SDK_URL };
+
+  let parsed;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return {
+      ok: false,
+      message:
+        "Invalid SDK URL. Use a full https address to Monetag’s JavaScript file, or clear the field for the default (libtl.com/sdk.js). Do not paste your GitHub Pages link here."
+    };
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return { ok: false, message: "SDK URL must start with https:// (or http://)." };
+  }
+
+  const host = parsed.hostname.toLowerCase();
+  const pathPlus = `${parsed.pathname}${parsed.search}`.toLowerCase();
+  const looksLikeGithubPagesOrRepo =
+    host.endsWith("github.io") || host === "github.com" || host.endsWith(".github.com");
+  if (looksLikeGithubPagesOrRepo && !/\.js(\?|#|$)/i.test(pathPlus)) {
+    return {
+      ok: false,
+      message:
+        "That URL looks like your GitHub Pages site or repo, not Monetag’s SDK. Clear this field to use the default SDK, or paste only the script URL Monetag gives you. Your game’s https://….github.io/… address belongs in Monetag’s site / property settings, not in this box."
+    };
+  }
+
+  return { ok: true, url: trimmed };
+}
+
 function loadMonetagSdk() {
   monetagReady = false;
   const existing = document.querySelector("script[data-monetag-sdk='1']");
@@ -626,7 +662,7 @@ function loadMonetagSdk() {
   if (!monetagConfig.mainZone.trim()) return;
 
   const script = document.createElement("script");
-  script.src = monetagConfig.sdkUrl || "https://libtl.com/sdk.js";
+  script.src = monetagConfig.sdkUrl || DEFAULT_MONETAG_SDK_URL;
   script.async = true;
   script.dataset.zone = monetagConfig.mainZone.trim();
   script.dataset.sdk = getMonetagFnName();
@@ -637,7 +673,9 @@ function loadMonetagSdk() {
   };
   script.onerror = () => {
     monetagReady = false;
-    setMessage("Monetag SDK failed to load");
+    setMessage(
+      "Monetag SDK failed to load. If you put your GitHub Pages game link in the SDK box, clear it and use the default (or the exact .js URL from Monetag)."
+    );
     render();
   };
   document.head.appendChild(script);
@@ -748,13 +786,18 @@ function toggleAdAdminVisibility() {
 function saveAdPlacement() {
   const mainZone = monetagMainZoneInputEl.value.trim();
   const rewardedZone = monetagRewardedZoneInputEl.value.trim();
-  const sdkUrl = monetagScriptUrlInputEl.value.trim() || "https://libtl.com/sdk.js";
+  const sdkNorm = normalizeMonetagSdkUrlInput(monetagScriptUrlInputEl.value);
+  if (!sdkNorm.ok) {
+    setMessage(sdkNorm.message);
+    render();
+    return;
+  }
   const rewardCoins = Number(monetagRewardCoinsInputEl.value || 400);
   const ownershipScript = monetagOwnershipScriptInputEl.value || "";
 
   monetagConfig.mainZone = mainZone;
   monetagConfig.rewardedZone = rewardedZone;
-  monetagConfig.sdkUrl = sdkUrl;
+  monetagConfig.sdkUrl = sdkNorm.url;
   monetagConfig.rewardedCoins = Number.isFinite(rewardCoins) && rewardCoins > 0 ? rewardCoins : 400;
   monetagConfig.ownershipScript = ownershipScript;
   saveMonetagConfig();
