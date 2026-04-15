@@ -1,7 +1,5 @@
 const SAVE_KEY = "revmine_save_v2";
-const MONETAG_CONFIG_KEY = "revmine_monetag_v1";
 const GAME_TICK_MS = 1000;
-const DEFAULT_MONETAG_SDK_URL = "https://libtl.com/sdk.js";
 
 const baseState = {
   coins: 100,
@@ -77,9 +75,7 @@ const progressWrapEl = document.getElementById("progressWrap");
 const minersGridEl = document.getElementById("minersGrid");
 const depositInputEl = document.getElementById("depositInput");
 const boostBtnEl = document.getElementById("boostBtn");
-const rewardedBoostBtnEl = document.getElementById("rewardedBoostBtn");
 const supplyBtnEl = document.getElementById("supplyBtn");
-const rewardedSupplyBtnEl = document.getElementById("rewardedSupplyBtn");
 const autoMergeBtnEl = document.getElementById("autoMergeBtn");
 const upgradesListEl = document.getElementById("upgradesList");
 const missionTextEl = document.getElementById("missionText");
@@ -103,36 +99,11 @@ const editNameBtnEl = document.getElementById("editNameBtn");
 const playerNameDisplayEl = document.getElementById("playerNameDisplay");
 const nameEditorEl = document.getElementById("nameEditor");
 const floatLayerEl = document.getElementById("floatLayer");
-const adAdminPinEl = document.getElementById("adAdminPin");
-const adUnlockBtnEl = document.getElementById("adUnlockBtn");
-const adAdminBoxEl = document.getElementById("adAdminBox");
-const adAdminLockEl = document.getElementById("adAdminLock");
-const adAdminPanelEl = document.getElementById("adAdminPanel");
-const monetagMainZoneInputEl = document.getElementById("monetagMainZoneInput");
-const monetagRewardedZoneInputEl = document.getElementById("monetagRewardedZoneInput");
-const monetagScriptUrlInputEl = document.getElementById("monetagScriptUrlInput");
-const monetagRewardCoinsInputEl = document.getElementById("monetagRewardCoinsInput");
-const monetagOwnershipScriptInputEl = document.getElementById("monetagOwnershipScriptInput");
-const adSavePlacementBtnEl = document.getElementById("adSavePlacementBtn");
-const adPlacementsListEl = document.getElementById("adPlacementsList");
 let leaderboardCache = {
   bucket: -1,
   entries: []
 };
 let isEditingName = false;
-let adAdminUnlocked = false;
-let adAdminVisible = false;
-let monetagConfig = {
-  pin: "1234",
-  sdkUrl: DEFAULT_MONETAG_SDK_URL,
-  mainZone: "",
-  rewardedZone: "",
-  rewardedCoins: 400,
-  ownershipScript: ""
-};
-let monetagReady = false;
-let rewardedAdCoolingDown = 0;
-
 const vaultRatePerSecond = Math.pow(1.01, 1 / 3600) - 1;
 const minerBaseCost = 50;
 const repairCost = 100;
@@ -575,301 +546,6 @@ function render() {
   renderDailyAndPrestige();
   renderMillionaireGoal();
   renderLeaderboard();
-  renderAdAdmin();
-}
-
-function loadMonetagConfig() {
-  const raw = localStorage.getItem(MONETAG_CONFIG_KEY);
-  if (!raw) return;
-  try {
-    const saved = JSON.parse(raw);
-    monetagConfig = {
-      pin: saved.pin || "1234",
-      sdkUrl: saved.sdkUrl || DEFAULT_MONETAG_SDK_URL,
-      mainZone: saved.mainZone || "",
-      rewardedZone: saved.rewardedZone || "",
-      rewardedCoins: Number(saved.rewardedCoins) > 0 ? Number(saved.rewardedCoins) : 400,
-      ownershipScript: saved.ownershipScript || ""
-    };
-  } catch (error) {
-    localStorage.removeItem(MONETAG_CONFIG_KEY);
-  }
-}
-
-function saveMonetagConfig() {
-  localStorage.setItem(MONETAG_CONFIG_KEY, JSON.stringify(monetagConfig));
-}
-
-function getMonetagFnName() {
-  const zone = monetagConfig.mainZone.trim();
-  return zone ? `show_${zone}` : "";
-}
-
-function getMonetagShowFn() {
-  const fnName = getMonetagFnName();
-  const fn = window[fnName];
-  if (!fnName || typeof fn !== "function") return null;
-  return fn;
-}
-
-function showMonetagAd(requestVar) {
-  const showFn = getMonetagShowFn();
-  if (!showFn) return Promise.reject(new Error("Monetag not ready"));
-  const eventId = `${state.playerName}-${Date.now()}-${requestVar}`;
-  return showFn({ ymid: eventId, requestVar });
-}
-
-/** SDK field = Monetag’s script file, not your GitHub Pages game URL (that goes in Monetag’s dashboard only). */
-function normalizeMonetagSdkUrlInput(raw) {
-  const trimmed = String(raw ?? "").trim();
-  if (!trimmed) return { ok: true, url: DEFAULT_MONETAG_SDK_URL };
-
-  let parsed;
-  try {
-    parsed = new URL(trimmed);
-  } catch {
-    return {
-      ok: false,
-      message:
-        "Invalid SDK URL. Use a full https address to Monetag’s JavaScript file, or clear the field for the default (libtl.com/sdk.js). Do not paste your GitHub Pages link here."
-    };
-  }
-
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    return { ok: false, message: "SDK URL must start with https:// (or http://)." };
-  }
-
-  const host = parsed.hostname.toLowerCase();
-  const pathPlus = `${parsed.pathname}${parsed.search}`.toLowerCase();
-  const looksLikeGithubPagesOrRepo =
-    host.endsWith("github.io") || host === "github.com" || host.endsWith(".github.com");
-  if (looksLikeGithubPagesOrRepo && !/\.js(\?|#|$)/i.test(pathPlus)) {
-    return {
-      ok: false,
-      message:
-        "That URL looks like your GitHub Pages site or repo, not Monetag’s SDK. Clear this field to use the default SDK, or paste only the script URL Monetag gives you. Your game’s https://….github.io/… address belongs in Monetag’s site / property settings, not in this box."
-    };
-  }
-
-  return { ok: true, url: trimmed };
-}
-
-function loadMonetagSdk() {
-  monetagReady = false;
-  const existing = document.querySelector("script[data-monetag-sdk='1']");
-  if (existing) existing.remove();
-
-  if (!monetagConfig.mainZone.trim()) return;
-
-  const script = document.createElement("script");
-  script.src = monetagConfig.sdkUrl || DEFAULT_MONETAG_SDK_URL;
-  script.async = true;
-  script.dataset.zone = monetagConfig.mainZone.trim();
-  script.dataset.sdk = getMonetagFnName();
-  script.dataset.monetagSdk = "1";
-  script.onload = () => {
-    monetagReady = typeof window[getMonetagFnName()] === "function";
-    render();
-  };
-  script.onerror = () => {
-    monetagReady = false;
-    setMessage(
-      "Monetag SDK failed to load. If you put your GitHub Pages game link in the SDK box, clear it and use the default (or the exact .js URL from Monetag)."
-    );
-    render();
-  };
-  document.head.appendChild(script);
-}
-
-function applyOwnershipScript() {
-  const previousNodes = document.querySelectorAll("[data-monetag-ownership='1']");
-  previousNodes.forEach((node) => node.remove());
-  // Monetag's verification snippet runs in this document and can block or clear inputs.
-  // While the backoffice is open, keep it stripped so you can paste zone IDs and ownership HTML safely.
-  if (adAdminVisible) return;
-  const html = (monetagConfig.ownershipScript || "").trim();
-  if (!html) return;
-
-  const holder = document.createElement("div");
-  holder.innerHTML = html;
-  [...holder.childNodes].forEach((node) => {
-    if (node.nodeType === Node.TEXT_NODE && !node.textContent.trim()) return;
-    if (node.nodeName.toLowerCase() === "script") {
-      const script = document.createElement("script");
-      [...node.attributes].forEach((attr) => script.setAttribute(attr.name, attr.value));
-      script.textContent = node.textContent;
-      script.dataset.monetagOwnership = "1";
-      document.head.appendChild(script);
-      return;
-    }
-    const wrap = document.createElement("div");
-    wrap.dataset.monetagOwnership = "1";
-    wrap.appendChild(node.cloneNode(true));
-    document.head.appendChild(wrap);
-  });
-}
-
-/** Do not call from render() every tick — it would wipe pasted text before Save. */
-function syncMonetagFormFromConfig() {
-  monetagMainZoneInputEl.value = monetagConfig.mainZone;
-  monetagRewardedZoneInputEl.value = monetagConfig.rewardedZone;
-  monetagScriptUrlInputEl.value = monetagConfig.sdkUrl;
-  monetagRewardCoinsInputEl.value = String(monetagConfig.rewardedCoins);
-  monetagOwnershipScriptInputEl.value = monetagConfig.ownershipScript || "";
-}
-
-function renderAdAdmin() {
-  adAdminBoxEl.classList.toggle("hidden", !adAdminVisible);
-
-  const adNotReady = !monetagConfig.mainZone.trim() || !monetagReady || rewardedAdCoolingDown > 0;
-  rewardedBoostBtnEl.disabled = adNotReady || state.boostCooldown > 0;
-  rewardedSupplyBtnEl.disabled = adNotReady || state.supplyCooldown > 0;
-  rewardedBoostBtnEl.textContent =
-    state.boostCooldown > 0
-      ? `🎬 Watch Ad for Boost (Boost ${state.boostCooldown}s)`
-      : rewardedAdCoolingDown > 0
-        ? `🎬 Watch ad: Super Boost (${rewardedAdCoolingDown}s)`
-        : "🎬 Watch ad: Super Boost (60s)";
-  rewardedSupplyBtnEl.textContent =
-    state.supplyCooldown > 0
-      ? `🎬 Watch Ad for Supply Drop (Supply ${state.supplyCooldown}s)`
-      : rewardedAdCoolingDown > 0
-        ? `🎬 Watch ad: Mega Supply (${rewardedAdCoolingDown}s)`
-        : "🎬 Watch ad: Mega Supply (300-900)";
-
-  if (!adAdminVisible) return;
-
-  adAdminLockEl.classList.toggle("hidden", adAdminUnlocked);
-  adAdminPanelEl.classList.toggle("hidden", !adAdminUnlocked);
-  adPlacementsListEl.innerHTML = "";
-
-  if (!adAdminUnlocked) return;
-
-  const status = document.createElement("div");
-  status.className = "ad-placement-row";
-  status.innerHTML = `
-    <div class="ad-placement-meta">
-      Main Zone: <strong>${monetagConfig.mainZone || "(not set)"}</strong><br />
-      Rewarded Zone: <strong>${monetagConfig.rewardedZone || "(optional)"}</strong><br />
-      Ownership Script: <strong>${monetagConfig.ownershipScript ? "Configured" : "Not set"}</strong><br />
-      SDK: <strong>${monetagReady ? "Loaded" : "Not Ready"}</strong>
-    </div>
-  `;
-  adPlacementsListEl.appendChild(status);
-}
-
-function unlockAdAdmin() {
-  if (adAdminPinEl.value !== monetagConfig.pin) {
-    setMessage("Invalid admin PIN");
-    render();
-    return;
-  }
-  adAdminUnlocked = true;
-  syncMonetagFormFromConfig();
-  setMessage("Monetag backoffice unlocked");
-  render();
-}
-
-function toggleAdAdminVisibility() {
-  adAdminVisible = !adAdminVisible;
-  if (adAdminVisible) {
-    setMessage("Monetag backoffice opened");
-    if (adAdminUnlocked) syncMonetagFormFromConfig();
-    setTimeout(() => adAdminPinEl.focus(), 0);
-  } else {
-    setMessage("Monetag backoffice hidden");
-  }
-  applyOwnershipScript();
-  render();
-}
-
-function saveAdPlacement() {
-  const mainZone = monetagMainZoneInputEl.value.trim();
-  const rewardedZone = monetagRewardedZoneInputEl.value.trim();
-  const sdkNorm = normalizeMonetagSdkUrlInput(monetagScriptUrlInputEl.value);
-  if (!sdkNorm.ok) {
-    setMessage(sdkNorm.message);
-    render();
-    return;
-  }
-  const rewardCoins = Number(monetagRewardCoinsInputEl.value || 400);
-  const ownershipScript = monetagOwnershipScriptInputEl.value || "";
-
-  monetagConfig.mainZone = mainZone;
-  monetagConfig.rewardedZone = rewardedZone;
-  monetagConfig.sdkUrl = sdkNorm.url;
-  monetagConfig.rewardedCoins = Number.isFinite(rewardCoins) && rewardCoins > 0 ? rewardCoins : 400;
-  monetagConfig.ownershipScript = ownershipScript;
-  saveMonetagConfig();
-  applyOwnershipScript();
-  loadMonetagSdk();
-  syncMonetagFormFromConfig();
-  if (!mainZone) {
-    setMessage(
-      "Draft saved (no Main Zone yet). Monetag often shows the zone ID only after site approval — add it here when ready, save again, then reload the game page. Rewarded ads stay off until Main Zone + SDK load."
-    );
-  } else {
-    setMessage("Monetag config saved");
-  }
-  render();
-}
-
-function triggerRewardedBoostAd() {
-  if (state.boostCooldown > 0) {
-    setMessage(`Boost in ${state.boostCooldown}s`);
-    render();
-    return;
-  }
-  if (rewardedAdCoolingDown > 0) {
-    setMessage(`Ad ready in ${rewardedAdCoolingDown}s`);
-    render();
-    return;
-  }
-  if (!getMonetagShowFn()) {
-    setMessage("Monetag not ready. Configure zone and reload SDK.");
-    render();
-    return;
-  }
-
-  showMonetagAd("revmine_rewarded_boost")
-    .then(() => {
-      rewardedAdCoolingDown = 45;
-      boost(60, 30, "⚡ Ad super boost for 60s");
-      spawnFloatText("Boost Activated", rewardedBoostBtnEl);
-    })
-    .catch(() => {
-      setMessage("Ad unavailable right now. Try again shortly.");
-      render();
-    });
-}
-
-function triggerRewardedSupplyAd() {
-  if (state.supplyCooldown > 0) {
-    setMessage(`Supply in ${state.supplyCooldown}s`);
-    render();
-    return;
-  }
-  if (rewardedAdCoolingDown > 0) {
-    setMessage(`Ad ready in ${rewardedAdCoolingDown}s`);
-    render();
-    return;
-  }
-  if (!getMonetagShowFn()) {
-    setMessage("Monetag not ready. Configure zone and reload SDK.");
-    render();
-    return;
-  }
-
-  showMonetagAd("revmine_rewarded_supply")
-    .then(() => {
-      rewardedAdCoolingDown = 45;
-      supplyDrop(300, 900, "🎁 Ad supply drop");
-      spawnFloatText("Supply Delivered", rewardedSupplyBtnEl);
-    })
-    .catch(() => {
-      setMessage("Ad unavailable right now. Try again shortly.");
-      render();
-    });
 }
 
 function addMiner() {
@@ -1290,7 +966,6 @@ function tickGame() {
 
   if (state.boostCooldown > 0) state.boostCooldown -= 1;
   if (state.supplyCooldown > 0) state.supplyCooldown -= 1;
-  if (rewardedAdCoolingDown > 0) rewardedAdCoolingDown -= 1;
 
   if (state.boostActive) {
     state.boostTimeLeft -= 1;
@@ -1349,10 +1024,6 @@ dailyClaimBtnEl.addEventListener("click", claimDailyReward);
 prestigeBtnEl.addEventListener("click", prestigeReset);
 saveNameBtnEl.addEventListener("click", setPlayerName);
 editNameBtnEl.addEventListener("click", toggleNameEditor);
-adUnlockBtnEl.addEventListener("click", unlockAdAdmin);
-adSavePlacementBtnEl.addEventListener("click", saveAdPlacement);
-rewardedBoostBtnEl.addEventListener("click", triggerRewardedBoostAd);
-rewardedSupplyBtnEl.addEventListener("click", triggerRewardedSupplyAd);
 playerNameInputEl.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     setPlayerName();
@@ -1365,53 +1036,12 @@ document.addEventListener("click", (event) => {
   addButtonFeedback(button, event);
 });
 
-function isBackofficeToggleShortcut(event) {
-  const key = (event.key || "").toLowerCase();
-  const primary = event.ctrlKey || event.metaKey;
-  return primary && event.shiftKey && (key === "x" || event.code === "KeyX");
+try {
+  localStorage.removeItem("revmine_monetag_v1");
+} catch {
+  /* ignore */
 }
 
-function onGlobalKeydown(event) {
-  const key = (event.key || "").toLowerCase();
-  if (isBackofficeToggleShortcut(event)) {
-    event.preventDefault();
-    event.stopPropagation();
-    toggleAdAdminVisibility();
-    return;
-  }
-  if (key === "escape" && adAdminVisible) {
-    event.preventDefault();
-    adAdminVisible = false;
-    setMessage("Monetag backoffice hidden");
-    render();
-  }
-}
-
-document.addEventListener("keydown", onGlobalKeydown, true);
-
-// Keyboard shortcut is easy to miss (browser/extensions). Triple-click the title toggles the same panel.
-const gameTitleEl = document.getElementById("gameTitle");
-let gameTitleClickCount = 0;
-let gameTitleClickTimer = null;
-if (gameTitleEl) {
-  gameTitleEl.addEventListener("click", () => {
-    gameTitleClickCount += 1;
-    clearTimeout(gameTitleClickTimer);
-    gameTitleClickTimer = setTimeout(() => {
-      gameTitleClickCount = 0;
-    }, 700);
-    if (gameTitleClickCount >= 3) {
-      gameTitleClickCount = 0;
-      clearTimeout(gameTitleClickTimer);
-      toggleAdAdminVisibility();
-    }
-  });
-}
-
-loadMonetagConfig();
-syncMonetagFormFromConfig();
-applyOwnershipScript();
-loadMonetagSdk();
 loadGame();
 setInterval(tickGame, 1000);
 render();

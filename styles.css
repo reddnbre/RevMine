@@ -142,16 +142,6 @@ h1 {
   gap: 8px;
 }
 
-.action-group {
-  margin-top: 8px;
-}
-
-.ad-secondary {
-  margin-top: 6px;
-  background: #115e59;
-  font-size: 13px;
-}
-
 button,
 input {
   width: 100%;
@@ -254,60 +244,17 @@ button:disabled {
   margin: 10px 0;
 }
 
-.admin-box {
-  background: #27272a;
-  border-radius: 12px;
-  padding: 10px;
-  margin: 10px 0;
-}
-
-.admin-box h2 {
-  margin: 0 0 6px;
-  font-size: 16px;
-}
-
-.admin-hint {
-  margin: 0 0 10px;
-  font-size: 12px;
-  line-height: 1.45;
+.site-promo {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 13px;
   color: #a1a1aa;
+  line-height: 1.45;
 }
 
-.admin-hint a {
+.site-promo a {
   color: #7dd3fc;
-}
-
-#monetagMainZoneInput,
-#monetagRewardedZoneInput,
-#monetagScriptUrlInput,
-#monetagRewardCoinsInput,
-#monetagOwnershipScriptInput {
-  width: 100%;
-  margin-top: 8px;
-  border-radius: 10px;
-  border: 0;
-  padding: 10px;
-}
-
-.ad-placement-row {
-  background: #3f3f46;
-  border-radius: 8px;
-  padding: 8px;
-  margin-top: 8px;
-  font-size: 12px;
-}
-
-.ad-placement-meta {
-  color: #d4d4d8;
-  margin-bottom: 4px;
-}
-
-#adUnlockBtn,
-#adSavePlacementBtn,
-#rewardedBoostBtn,
-#rewardedSupplyBtn,
-#rewardedAdBtn {
-  background: #0f766e;
+  font-weight: 600;
 }
 
 .daily-box h2,

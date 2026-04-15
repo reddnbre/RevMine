@@ -4,17 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RevMine</title>
-    <link rel="stylesheet" href="./styles.css?v=11" />
+    <link rel="stylesheet" href="./styles.css?v=12" />
   </head>
   <body>
     <main class="app">
       <section class="panel">
-        <h1
-          id="gameTitle"
-          title="Monetag backoffice: triple-click this title, or Ctrl+Shift+X (Cmd+Shift+X on Mac). Esc to hide."
-        >
-          RevMine
-        </h1>
+        <h1>RevMine</h1>
         <p id="tier" class="tier">Rookie Miner</p>
 
         <div class="stats">
@@ -95,76 +90,18 @@
           <button id="prestigeBtn">Prestige Reset</button>
         </section>
 
-        <div class="action-group">
+        <div class="button-row">
           <button id="boostBtn">Boost</button>
-          <button id="rewardedBoostBtn" class="ad-secondary">🎬 Watch ad: Super Boost</button>
-        </div>
-        <div class="action-group">
           <button id="supplyBtn">Supply Drop</button>
-          <button id="rewardedSupplyBtn" class="ad-secondary">🎬 Watch ad: Mega Supply Drop</button>
         </div>
         <button id="saveBtn">Save Progress</button>
         <button id="resetBtn">Hard Reset</button>
-        <section id="adAdminBox" class="admin-box hidden">
-          <h2>🛠️ Monetag Backoffice</h2>
-          <div id="adAdminLock">
-            <input id="adAdminPin" type="password" placeholder="Admin PIN" />
-            <button id="adUnlockBtn">Unlock Ad Admin</button>
-          </div>
-          <div id="adAdminPanel" class="hidden">
-            <p class="admin-hint">
-              Main zone can stay empty until Monetag shows it. Ownership script is not injected while this panel is
-              open so pasting is not cleared. Alternate editor:
-              <a href="./monetag-setup.html" target="_blank" rel="noopener">monetag-setup.html</a>
-            </p>
-            <p class="admin-hint">
-              <strong>SDK URL</strong> must be Monetag’s JavaScript file (leave blank for the default), not your game
-              URL. In Monetag’s “Add website” step they require a site that is
-              <strong>not a free-hosted domain</strong> — so <code>*.github.io</code> is blocked there. Point a
-              <strong>custom domain</strong> at GitHub Pages (repo Settings → Pages → Custom domain), verify DNS, then
-              register that domain with Monetag. RevMine cannot bypass their rules.
-            </p>
-            <input
-              id="monetagMainZoneInput"
-              type="text"
-              autocomplete="off"
-              data-revmine-admin="1"
-              placeholder="Monetag Main Zone ID (when Monetag gives it — optional until then)"
-            />
-            <input
-              id="monetagRewardedZoneInput"
-              type="text"
-              autocomplete="off"
-              data-revmine-admin="1"
-              placeholder="Rewarded Zone ID (optional)"
-            />
-            <input
-              id="monetagScriptUrlInput"
-              type="text"
-              autocomplete="off"
-              data-revmine-admin="1"
-              placeholder="SDK URL (optional override)"
-            />
-            <input
-              id="monetagRewardCoinsInput"
-              type="number"
-              min="50"
-              step="50"
-              autocomplete="off"
-              data-revmine-admin="1"
-              placeholder="Rewarded bonus coins (default 400)"
-            />
-            <textarea
-              id="monetagOwnershipScriptInput"
-              rows="4"
-              autocomplete="off"
-              data-revmine-admin="1"
-              placeholder="Ownership verification HTML/script (injected into head when this panel is closed)"
-            ></textarea>
-            <button id="adSavePlacementBtn">Save Monetag Config</button>
-            <div id="adPlacementsList"></div>
-          </div>
-        </section>
+
+        <p class="site-promo">
+          From
+          <a href="https://socialcreditu.com/" target="_blank" rel="noopener noreferrer">Social Credit U</a>
+          — more games and updates at socialcreditu.com
+        </p>
 
         <p id="message" class="message">Build your mining empire...</p>
         <div id="winBanner" class="win-banner hidden">
@@ -174,6 +111,6 @@
       </section>
     </main>
 
-    <script src="./app.js?v=11"></script>
+    <script src="./app.js?v=12"></script>
   </body>
 </html>
